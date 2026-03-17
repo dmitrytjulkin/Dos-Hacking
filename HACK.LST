@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 4.1	    03/17/26 13:36:49	    Page 1
+Turbo Assembler	 Version 4.1	    03/17/26 21:03:15	    Page 1
 hack.asm
 
 
@@ -7,59 +7,75 @@ hack.asm
       2	0000			     .code
       3				     org 100h
       4
-      5	      =B800		     VIDEOSEG	  equ 0b800h
-      6	      =0082		     INP_ADDR	  equ 82h
-      7	      =0080		     INP_LEN_ADDR equ 80h
-      8
+      5	      =B800		     VIDEOSEG	     equ 0b800h
+      6	      =0082		     INP_ADDR	     equ 82h
+      7	      =0080		     INP_LEN_ADDR    equ 80h
+      8	      =00A0		     MAX_BUF_LEN     equ 0A0h
       9
-     10	0100			     Start:
-     11	0100  50 55 8B EC C7 46	02+	 push VIDEOSEG
-     12	      B800 5D
-     13	010A  07			 pop es
-     14
-     15	010B  E8 000B			 call HashFunc
-     16	010E  B4 70			 mov ah, 70h
-     17	0110  26: A3 0000		 mov es:[00], ax
-     18
-     19	0114  B8 4C00			 mov ax, 4c00h
-     20	0117  CD 21			 int 21h
-     21
-     22				     ;_____________________________________________________;
-     23				     ;__HASHFUNC__
-     24				     ;Gets the string from the input and returns its value
-     25				     ;Entry:
-     26				     ;Exit: AX
-     27				     ;Destr: BX, CX, DX, DI
-     28				     ;_____________________________________________________;
-     29	0119			     HashFunc	 proc
-     30	0119  8A 0E 0080		 mov cl, ds:[INP_LEN_ADDR]
-     31	011D  FE C9			 dec cl			 ;cx = len(input)
-     32
-     33	011F			     looper:
-     34	011F  8B F9			 mov di, cx
-     35	0121  8B 9D 0082		 mov bx, ds:[INP_ADDR +	di]
-     36
-     37	0125  50			 push ax
-     38	0126  8B C3			 mov ax, bx
-     39	0128  F7 E3			 mul bx
-     40	012A  8B D8			 mov bx, ax
-     41	012C  58			 pop ax
-     42
-     43	012D  03 C3			 add ax, bx
-     44
-     45	012F  BA 0100			 mov dx, 100h
-     46	0132  F7 F2			 div dx
-     47	0134  8B C2			 mov ax, dx		 ;ax +=	bx^2 (mod 100h)
+     10
+     11	0100			     start:
+     12	0100			     .data
+     13	0000			     BUF_SET_UP:
+     14	0000  A0			 max_len     db	MAX_BUF_LEN
+     15	0001  00			 strlen	     db	0
+     16	0002  A0*(00)			 buffer	     db	MAX_BUF_LEN dup(0)
+     17
+     18	00A2			     .code
+     19	0100  BA 0000r			 mov dx, offset	max_len
+     20	0103  B4 0A			 mov ah, 0ah
+     21	0105  CD 21			 int 21h
+     22
+     23	0107  50 55 8B EC C7 46	02+	 push VIDEOSEG
+     24	      B800 5D
+     25	0111  07			 pop es
+     26
+     27	0112  E8 000B			 call HashFunc
+     28	0115  B4 70			 mov ah, 70h
+     29	0117  26: A3 0000		 mov es:[00], ax
+     30
+     31				     ;	  mov dx, offset buffer
+     32				     ;	  mov ah, 09h
+     33				     ;	  int 21h
+     34
+     35	011B  B8 4C00			 mov ax, 4c00h
+     36	011E  CD 21			 int 21h
+     37
+     38				     ;_____________________________________________________;
+     39
+     40				     ;__HASHFUNC__
+     41				     ;Gets the string from the input and returns its value
+     42				     ;Entry:
+     43				     ;Exit: AX
+     44				     ;Destr: BX, CX, DX, DI
+     45				     ;_____________________________________________________;
+     46	0120			     HashFunc	 proc
+     47	0120  8A 0E 0001r		 mov cl, strlen
      48
-     49	0136  E2 E7			 loop looper
-     50
-     51	0138  C3			 ret
-     52	0139				 endp
+     49	0124			     hash_sentence:
+     50	0124  8B F9			 mov di, cx
+     51	0126  4F			 dec di
+     52	0127  8A 9D 0002r		 mov bl, buffer[di]
      53
-     54	0139  03F4*(00)		     password db 1012 dup(0)
+     54	012B  03 C3			 add ax, bx
      55
-     56				     end     Start
-Turbo Assembler	 Version 4.1	    03/17/26 13:36:49	    Page 2
+     56	012D  33 D2			 xor dx, dx
+     57	012F  BB 0100			 mov bx, 100h
+Turbo Assembler	 Version 4.1	    03/17/26 21:03:15	    Page 2
+hack.asm
+
+
+
+     58	0132  F7 F3			 div bx
+     59	0134  8B C2			 mov ax, dx			 ;ax +=	bx^2 (mod 100h)
+     60
+     61	0136  E2 EC			 loop hash_sentence
+     62
+     63	0138  C3			 ret
+     64	0139				 endp
+     65				     ;_____________________________________________________;
+     66
+     67				     end	 Start
+Turbo Assembler	 Version 4.1	    03/17/26 21:03:15	    Page 3
 Symbol Table
 
 
@@ -69,7 +85,7 @@ Symbol Name			  Type	 Value
 
 ??DATE				  Text	 "03/17/26"
 ??FILENAME			  Text	 "hack	  "
-??TIME				  Text	 "13:36:49"
+??TIME				  Text	 "21:03:15"
 ??VERSION			  Number 040A
 @32BIT				  Text	 0
 @CODE				  Text	 DGROUP
@@ -83,17 +99,21 @@ Symbol Name			  Type	 Value
 @MODEL				  Text	 1
 @STACK				  Text	 DGROUP
 @WORDSIZE			  Text	 2
-HASHFUNC			  Near	 DGROUP:0119
+BUFFER				  Byte	 DGROUP:0002
+BUF_SET_UP			  Near	 DGROUP:0000
+HASHFUNC			  Near	 DGROUP:0120
+HASH_SENTENCE			  Near	 DGROUP:0124
 INP_ADDR			  Number 0082
 INP_LEN_ADDR			  Number 0080
-LOOPER				  Near	 DGROUP:011F
-PASSWORD			  Byte	 DGROUP:0139
+MAX_BUF_LEN			  Number 00A0
+MAX_LEN				  Byte	 DGROUP:0000
 START				  Near	 DGROUP:0100
+STRLEN				  Byte	 DGROUP:0001
 VIDEOSEG			  Number B800
 
 Groups & Segments		  Bit Size Align  Combine Class
 
 DGROUP				  Group
-  _DATA				  16  0000 Word	  Public  DATA
-  _TEXT				  16  052D Word	  Public  CODE
+  _DATA				  16  00A2 Word	  Public  DATA
+  _TEXT				  16  0139 Word	  Public  CODE
 

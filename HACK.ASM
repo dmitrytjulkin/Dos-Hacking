@@ -2,12 +2,24 @@
 .code
 org 100h
 
-VIDEOSEG     equ 0b800h
-INP_ADDR     equ 82h
-INP_LEN_ADDR equ 80h
+VIDEOSEG        equ 0b800h
+INP_ADDR        equ 82h
+INP_LEN_ADDR    equ 80h
+MAX_BUF_LEN     equ 0A0h
 
 
-Start:
+start:
+.data
+BUF_SET_UP:
+    max_len     db MAX_BUF_LEN
+    strlen      db 0
+    buffer      db MAX_BUF_LEN dup(0)
+
+.code
+    mov dx, offset max_len
+    mov ah, 0ah
+    int 21h
+
     push VIDEOSEG
     pop es
 
@@ -15,41 +27,40 @@ Start:
     mov ah, 70h
     mov es:[00], ax
 
+;    mov dx, offset buffer
+;    mov ah, 09h
+;    int 21h
+
     mov ax, 4c00h
     int 21h
 
 ;_____________________________________________________;
+
 ;__HASHFUNC__
-;Gets the string from the input and returns its value
-;Entry:
+;Gets the dx = address of string, cx = the length of this string and returns its value
+;Entry: CL
 ;Exit: AX
 ;Destr: BX, CX, DX, DI
 ;_____________________________________________________;
 HashFunc    proc
-    mov cl, ds:[INP_LEN_ADDR]
-    dec cl                  ;cx = len(input)
+    mov cl, strlen
 
-looper:
+hash_sentence:
     mov di, cx
-    mov bx, ds:[INP_ADDR + di]
-
-    push ax
-    mov ax, bx
-    mul bx
-    mov bx, ax
-    pop ax
+    dec di
+    mov bl, buffer[di]
 
     add ax, bx
 
-    mov dx, 100h
-    div dx
-    mov ax, dx              ;ax += bx^2 (mod 100h)
+    xor dx, dx
+    mov bx, 100h
+    div bx
+    mov ax, dx                      ;ax += bx^2 (mod 100h)
 
-    loop looper
+    loop hash_sentence
 
     ret
     endp
+;_____________________________________________________;
 
-password db 1012 dup(0)
-
-end	Start
+end	    Start
