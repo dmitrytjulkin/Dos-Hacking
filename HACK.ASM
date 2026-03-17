@@ -9,46 +9,60 @@ MAX_BUF_LEN     equ 0A0h
 
 
 start:
-.data
-BUF_SET_UP:
-    max_len     db MAX_BUF_LEN
-    strlen      db 0
-    buffer      db MAX_BUF_LEN dup(0)
-
 .code
+    mov dx, offset extra_phrase
+    mov ah, 09h
+    int 21h
+
     mov dx, offset max_len
     mov ah, 0ah
-    int 21h
+    int 21h                         ;saving input string in buffer
 
-    push VIDEOSEG
-    pop es
+    xor cx, cx
+    mov dx, offset buffer
+    mov di, dx
+    mov cl, strlen
+    call HashFunc                   ;receiving hash of input
+    mov bx, ax
 
-    call HashFunc
-    mov ah, 70h
-    mov es:[00], ax
+    mov dx, offset psswrd
+    mov di, dx
+    mov cl, 6d
+    call HashFunc                   ;receiving hash of psswrd
 
-;    mov dx, offset buffer
-;    mov ah, 09h
-;    int 21h
+    cmp ax, bx
+    je has_guessed
+
+hasnt_guessed:
+    mov dx, offset incorrect_psswrd
+    jmp next
+
+has_guessed:
+    mov dx, offset correct_psswrd
+
+next:
+    mov ah, 09h
+    int 21h                         ;printing the dx string
 
     mov ax, 4c00h
-    int 21h
+    int 21h                         ;end the program
 
 ;_____________________________________________________;
 
 ;__HASHFUNC__
-;Gets the dx = address of string, cx = the length of this string and returns its value
-;Entry: CL
+;Gets the di (address of string), cx (the length of this string) and returns its value
+;Entry: CX, DI
 ;Exit: AX
 ;Destr: BX, CX, DX, DI
 ;_____________________________________________________;
 HashFunc    proc
-    mov cl, strlen
+    push bx
+    xor ax, ax
 
 hash_sentence:
-    mov di, cx
-    dec di
-    mov bl, buffer[di]
+    xor bx, bx
+    mov bl, ds:[di]
+    inc di
 
     add ax, bx
 
@@ -59,8 +73,25 @@ hash_sentence:
 
     loop hash_sentence
 
+    pop bx
+
     ret
     endp
 ;_____________________________________________________;
+
+;__DATA__
+BUF_SET_UP:
+    max_len     db MAX_BUF_LEN
+    strlen      db 0
+    buffer      db MAX_BUF_LEN dup(0)
+
+MY_PSSWRD:
+    psswrd      db "012345$"
+
+RESPOND:
+    correct_psswrd   db "You're goddamn right (access granted)$"
+    incorrect_psswrd db "Go Home, Walter (access denied)$"
+    extra_phrase     db "Say my name$"
+
 
 end	    Start
