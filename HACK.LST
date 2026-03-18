@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 4.1	    03/18/26 00:05:25	    Page 1
+Turbo Assembler	 Version 4.1	    03/18/26 12:47:24	    Page 1
 hack.asm
 
 
@@ -12,110 +12,117 @@ hack.asm
       7	      =0080		     INP_LEN_ADDR    equ 80h
       8	      =00A0		     MAX_BUF_LEN     equ 0A0h
       9
-     10
-     11	0100			     start:
-     12	0100			     .code
-     13	0100  BA 0155r			 mov dx, offset	max_len
-     14	0103  B4 0A			 mov ah, 0ah
-     15	0105  CD 21			 int 21h			 ;saving input string in buffer
-     16
-     17	0107  BA 0244r			 mov dx, offset	extra_phrase
-     18	010A  B4 09			 mov ah, 09h
-     19	010C  CD 21			 int 21h
-     20
-     21	010E  33 C9			 xor cx, cx
-     22	0110  BA 0157r			 mov dx, offset	buffer
-     23	0113  8B FA			 mov di, dx
-     24	0115  8A 0E 0156r		 mov cl, strlen
-     25	0119  E8 0022			 call HashFunc			 ;receiving hash of input
-     26	011C  8B D8			 mov bx, ax
-     27
-     28	011E  BA 01F7r			 mov dx, offset	psswrd
-     29	0121  8B FA			 mov di, dx
-     30	0123  B1 06			 mov cl, 6d
-     31	0125  E8 0016			 call HashFunc			 ;receiving hash of psswrd
+     10	0100			     start:
+     11	0100			     .code
+     12	0100  BA 02F6r			 mov dx, offset	extra_phrase
+     13	0103  B4 09			 mov ah, 09h
+     14	0105  CD 21			 int 21h
+     15
+     16	0107  BA 015Er			 mov dx, offset	max_len
+     17	010A  B4 0A			 mov ah, 0ah
+     18	010C  CD 21			 int 21h			 ;saving input string in buffer
+     19
+     20	010E  1E			 push ds
+     21	010F  07			 pop es
+     22	0110  BF 0200r			 mov di, offset	buffer_copy
+     23	0113  BE 0160r			 mov si, offset	buffer
+     24	0116  B9 00A0			 mov cx, MAX_BUF_LEN
+     25	0119  F3> A4			 rep movsb			 ;copying string, ~vulnerability
+     26
+     27	011B  33 C9			 xor cx, cx
+     28	011D  BF 0200r			 mov di, offset	buffer_copy
+     29	0120  8A 0E 015Fr		 mov cl, strlen
+     30	0124  E8 0020			 call HashFunc			 ;receiving hash of input
+     31	0127  8B D8			 mov bx, ax
      32
-     33	0128  3B C3			 cmp ax, bx
-     34	012A  74 06			 je has_guessed
-     35
-     36	012C			     hasnt_guessed:
-     37	012C  BA 0224r			 mov dx, offset	incorrect_psswrd
-     38	012F  EB 04 90			 jmp next
+     33	0129  BF 02A0r			 mov di, offset	psswrd
+     34	012C  B1 0F			 mov cl, 15d			 ;//FIXME
+     35	012E  E8 0016			 call HashFunc			 ;receiving hash of psswrd
+     36
+     37	0131  3B C3			 cmp ax, bx
+     38	0133  74 06			 je has_guessed
      39
-     40	0132			     has_guessed:
-     41	0132  BA 01FEr			 mov dx, offset	correct_psswrd
-     42
-     43	0135			     next:
-     44	0135  B4 09			 mov ah, 09h
-     45	0137  CD 21			 int 21h			 ;printing the dx string
+     40	0135			     hasnt_guessed:
+     41	0135  BA 02D6r			 mov dx, offset	incorrect_psswrd
+     42	0138  EB 04 90			 jmp next
+     43
+     44	013B			     has_guessed:
+     45	013B  BA 02B0r			 mov dx, offset	correct_psswrd
      46
-     47	0139  B8 4C00			 mov ax, 4c00h
-     48	013C  CD 21			 int 21h			 ;end the program
-     49
-     50				     ;_____________________________________________________;
-     51
-     52				     ;__HASHFUNC__
-     53				     ;Gets the di (address of string), cx (the length of this string) and returns its value
-     54				     ;Entry: CX, DI
-     55				     ;Exit: AX
-     56				     ;Destr: BX, CX, DX, DI
-     57				     ;_____________________________________________________;
-Turbo Assembler	 Version 4.1	    03/18/26 00:05:25	    Page 2
+     47	013E			     next:
+     48	013E  B4 09			 mov ah, 09h
+     49	0140  CD 21			 int 21h			 ;printing the dx string
+     50
+     51	0142  B8 4C00			 mov ax, 4c00h
+     52	0145  CD 21			 int 21h			 ;end the program
+     53
+     54				     ;_____________________________________________________;
+     55
+     56				     ;__HASHFUNC__
+     57				     ;Gets the di (address of string), cx (the length of this string) and returns its value
+Turbo Assembler	 Version 4.1	    03/18/26 12:47:24	    Page 2
 hack.asm
 
 
 
-     58	013E			     HashFunc	 proc
-     59	013E  53			 push bx
-     60	013F  33 C0			 xor ax, ax
-     61
-     62	0141			     hash_sentence:
-     63	0141  33 DB			 xor bx, bx
-     64	0143  8A 1D			 mov bl, ds:[di]
-     65	0145  47			 inc di
-     66
-     67	0146  03 C3			 add ax, bx
-     68
-     69	0148  33 D2			 xor dx, dx
-     70	014A  BB 0100			 mov bx, 100h
-     71	014D  F7 F3			 div bx
-     72	014F  8B C2			 mov ax, dx			 ;ax +=	bx^2 (mod 100h)
-     73
-     74	0151  E2 EE			 loop hash_sentence
-     75
-     76	0153  5B			 pop bx
+     58				     ;Entry: CX, DI
+     59				     ;Exit: AX
+     60				     ;Destr: BX, CX, DX, DI
+     61				     ;_____________________________________________________;
+     62	0147			     HashFunc	 proc
+     63	0147  53			 push bx
+     64	0148  33 C0			 xor ax, ax
+     65
+     66	014A			     hash_sentence:
+     67	014A  33 DB			 xor bx, bx
+     68	014C  8A 1D			 mov bl, ds:[di]
+     69	014E  47			 inc di
+     70
+     71	014F  03 C3			 add ax, bx
+     72
+     73	0151  33 D2			 xor dx, dx
+     74	0153  BB 0100			 mov bx, 100h
+     75	0156  F7 F3			 div bx
+     76	0158  8B C2			 mov ax, dx			 ;ax +=	bx^2 (mod 100h)
      77
-     78	0154  C3			 ret
-     79	0155				 endp
-     80				     ;_____________________________________________________;
+     78	015A  E2 EE			 loop hash_sentence
+     79
+     80	015C  5B			 pop bx
      81
-     82				     ;__DATA__
-     83	0155			     BUF_SET_UP:
-     84	0155  A0			 max_len     db	MAX_BUF_LEN
-     85	0156  00			 strlen	     db	0
-     86	0157  A0*(00)			 buffer	     db	MAX_BUF_LEN dup(0)
-     87
-     88	01F7			     MY_PSSWRD:
-     89	01F7  30 31 32 33 34 35	24	 psswrd	     db	"012345$"
-     90
-     91	01FE			     RESPOND:
-     92	01FE  59 6F 75 27 72 65	20+	 correct_psswrd	  db "You're goddamn right (access granted)$"
-     93	      67 6F 64 64 61 6D	6E+
-     94	      20 72 69 67 68 74	20+
-     95	      28 61 63 63 65 73	73+
-     96	      20 67 72 61 6E 74	65+
-     97	      64 29 24
-     98	0224  47 6F 20 48 6F 6D	65+	 incorrect_psswrd db "Go Home, Walter (access denied)$"
-     99	      2C 20 57 61 6C 74	65+
-    100	      72 20 28 61 63 63	65+
-    101	      73 73 20 64 65 6E	69+
-    102	      65 64 29 24
-    103	0244  53 61 79 20 6D 79	20+	 extra_phrase	  db "Say my name$"
-    104	      6E 61 6D 65 24
-    105
-    106
-    107				     end	 Start
-Turbo Assembler	 Version 4.1	    03/18/26 00:05:25	    Page 3
+     82	015D  C3			 ret
+     83	015E				 endp
+     84				     ;_____________________________________________________;
+     85
+     86				     ;__DATA__
+     87	015E			     BUF_SET_UP:
+     88	015E  A0			 max_len     db	MAX_BUF_LEN
+     89	015F  00			 strlen	     db	0
+     90	0160  A0*(00)			 buffer	     db	MAX_BUF_LEN dup(0)
+     91	0200  A0*(00)			 buffer_copy db	MAX_BUF_LEN dup(0)
+     92
+     93	02A0			     MY_PSSWRD:
+     94	02A0  73 6D 6E 57 52 54	74+	 psswrd	     db	"smnWRTthsSNGbfr$"
+     95	      68 73 53 4E 47 62	66+
+     96	      72 24
+     97
+     98	02B0			     RESPOND:
+     99	02B0  59 6F 75 27 72 65	20+	 correct_psswrd	  db "You're goddamn right (access granted)$"
+    100	      67 6F 64 64 61 6D	6E+
+    101	      20 72 69 67 68 74	20+
+    102	      28 61 63 63 65 73	73+
+    103	      20 67 72 61 6E 74	65+
+    104	      64 29 24
+    105	02D6  47 6F 20 48 6F 6D	65+	 incorrect_psswrd db "Go Home, Walter (access denied)$"
+    106	      2C 20 57 61 6C 74	65+
+    107	      72 20 28 61 63 63	65+
+    108	      73 73 20 64 65 6E	69+
+    109	      65 64 29 24
+    110	02F6  53 61 79 20 6D 79	20+	 extra_phrase	  db "Say my name: $"
+    111	      6E 61 6D 65 3A 20	24
+    112
+    113
+    114				     end	 Start
+Turbo Assembler	 Version 4.1	    03/18/26 12:47:24	    Page 3
 Symbol Table
 
 
@@ -125,7 +132,7 @@ Symbol Name			  Type	 Value
 
 ??DATE				  Text	 "03/18/26"
 ??FILENAME			  Text	 "hack	  "
-??TIME				  Text	 "00:05:25"
+??TIME				  Text	 "12:47:24"
 ??VERSION			  Number 040A
 @32BIT				  Text	 0
 @CODE				  Text	 DGROUP
@@ -139,30 +146,31 @@ Symbol Name			  Type	 Value
 @MODEL				  Text	 1
 @STACK				  Text	 DGROUP
 @WORDSIZE			  Text	 2
-BUFFER				  Byte	 DGROUP:0157
-BUF_SET_UP			  Near	 DGROUP:0155
-CORRECT_PSSWRD			  Byte	 DGROUP:01FE
-EXTRA_PHRASE			  Byte	 DGROUP:0244
-HASHFUNC			  Near	 DGROUP:013E
-HASH_SENTENCE			  Near	 DGROUP:0141
-HASNT_GUESSED			  Near	 DGROUP:012C
-HAS_GUESSED			  Near	 DGROUP:0132
-INCORRECT_PSSWRD		  Byte	 DGROUP:0224
+BUFFER				  Byte	 DGROUP:0160
+BUFFER_COPY			  Byte	 DGROUP:0200
+BUF_SET_UP			  Near	 DGROUP:015E
+CORRECT_PSSWRD			  Byte	 DGROUP:02B0
+EXTRA_PHRASE			  Byte	 DGROUP:02F6
+HASHFUNC			  Near	 DGROUP:0147
+HASH_SENTENCE			  Near	 DGROUP:014A
+HASNT_GUESSED			  Near	 DGROUP:0135
+HAS_GUESSED			  Near	 DGROUP:013B
+INCORRECT_PSSWRD		  Byte	 DGROUP:02D6
 INP_ADDR			  Number 0082
 INP_LEN_ADDR			  Number 0080
 MAX_BUF_LEN			  Number 00A0
-MAX_LEN				  Byte	 DGROUP:0155
-MY_PSSWRD			  Near	 DGROUP:01F7
-NEXT				  Near	 DGROUP:0135
-PSSWRD				  Byte	 DGROUP:01F7
-RESPOND				  Near	 DGROUP:01FE
+MAX_LEN				  Byte	 DGROUP:015E
+MY_PSSWRD			  Near	 DGROUP:02A0
+NEXT				  Near	 DGROUP:013E
+PSSWRD				  Byte	 DGROUP:02A0
+RESPOND				  Near	 DGROUP:02B0
 START				  Near	 DGROUP:0100
-STRLEN				  Byte	 DGROUP:0156
+STRLEN				  Byte	 DGROUP:015F
 VIDEOSEG			  Number B800
 
 Groups & Segments		  Bit Size Align  Combine Class
 
 DGROUP				  Group
   _DATA				  16  0000 Word	  Public  DATA
-  _TEXT				  16  0250 Word	  Public  CODE
+  _TEXT				  16  0304 Word	  Public  CODE
 
