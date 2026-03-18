@@ -30,9 +30,12 @@ start:
     call HashFunc                   ;receiving hash of input
     mov bx, ax
 
-    mov di, offset psswrd
-    mov cl, 15d                     ;//FIXME
-    call HashFunc                   ;receiving hash of psswrd
+;    mov di, offset psswrd
+;    mov cl, 15d                     ;//FIXME
+;    call HashFunc                   ;receiving hash of psswrd
+
+    xor ax, ax
+    mov al, psswrd_code
 
     cmp ax, bx
     je has_guessed
@@ -87,11 +90,11 @@ hash_sentence:
 BUF_SET_UP:
     max_len     db MAX_BUF_LEN
     strlen      db 0
-    buffer      db MAX_BUF_LEN dup(0)
-    buffer_copy db MAX_BUF_LEN dup(0)
+    buffer      db MAX_BUF_LEN dup(?)
+    buffer_copy db MAX_BUF_LEN dup(?)
 
 MY_PSSWRD:
-    psswrd      db "smnWRTthsSNGbfr$"
+    psswrd_code      db 0Bh          ;GiovanniGiorgio
 
 RESPOND:
     correct_psswrd   db "You're goddamn right (access granted)$"
