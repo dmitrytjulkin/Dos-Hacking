@@ -5,9 +5,24 @@ org 100h
 VIDEOSEG        equ 0b800h
 INP_ADDR        equ 82h
 INP_LEN_ADDR    equ 80h
-MAX_BUF_LEN     equ 0A0h
+MAX_BUF_LEN     equ 0A00h
 
 start:
+.data
+BUF_SET_UP:
+    max_len     db MAX_BUF_LEN
+    strlen      db 0h
+    buffer      db 010h dup(?)
+    buffer_copy db 010h dup(?)
+
+MY_PSSWRD:
+    psswrd_code      db 0Bh          ;GiovanniGiorgio
+
+RESPOND:
+    incorrect_psswrd db "Go Home, Walter (access denied)$"
+    correct_psswrd   db "You're goddamn right (access granted)$"
+    extra_phrase     db "Say my name: $"
+
 .code
     mov dx, offset extra_phrase
     mov ah, 09h
@@ -21,7 +36,8 @@ start:
     pop es
     mov di, offset buffer_copy
     mov si, offset buffer
-    mov cx, MAX_BUF_LEN
+    xor cx, cx
+    mov cl, strlen
     rep movsb                       ;copying string, ~vulnerability
 
     xor cx, cx
@@ -85,21 +101,5 @@ hash_sentence:
     ret
     endp
 ;_____________________________________________________;
-
-;__DATA__
-BUF_SET_UP:
-    max_len     db MAX_BUF_LEN
-    strlen      db 0
-    buffer      db MAX_BUF_LEN dup(?)
-    buffer_copy db MAX_BUF_LEN dup(?)
-
-MY_PSSWRD:
-    psswrd_code      db 0Bh          ;GiovanniGiorgio
-
-RESPOND:
-    correct_psswrd   db "You're goddamn right (access granted)$"
-    incorrect_psswrd db "Go Home, Walter (access denied)$"
-    extra_phrase     db "Say my name: $"
-
 
 end	    Start
