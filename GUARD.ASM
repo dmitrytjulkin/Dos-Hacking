@@ -5,7 +5,7 @@ org 100h
 VIDEOSEG        equ 0b800h
 INP_ADDR        equ 82h
 INP_LEN_ADDR    equ 80h
-MAX_BUF_LEN     equ 0A00h
+MAX_BUF_LEN     equ 00FFh
 
 start:
 .data
