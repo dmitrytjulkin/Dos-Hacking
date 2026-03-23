@@ -8,21 +8,6 @@ INP_LEN_ADDR    equ 80h
 MAX_BUF_LEN     equ 00FFh
 
 start:
-.data
-BUF_SET_UP:
-    max_len     db MAX_BUF_LEN
-    strlen      db 0h
-    buffer      db 010h dup(?)
-    buffer_copy db 010h dup(?)
-
-MY_PSSWRD:
-    psswrd_code      db 0Bh          ;GiovanniGiorgio
-
-RESPOND:
-    incorrect_psswrd db "Go Home, Walter (access denied)$"
-    correct_psswrd   db "You're goddamn right (access granted)$"
-    extra_phrase     db "Say my name: $"
-
 .code
     mov dx, offset extra_phrase
     mov ah, 09h
@@ -32,27 +17,31 @@ RESPOND:
     mov ah, 0ah
     int 21h                         ;saving input string in buffer
 
-    push ds
-    pop es
-    mov di, offset buffer_copy
-    mov si, offset buffer
     xor cx, cx
-    mov cl, strlen
-    rep movsb                       ;copying string, ~vulnerability
-
-    xor cx, cx
-    mov di, offset buffer_copy
+    mov di, offset buffer
     mov cl, strlen
     call HashFunc                   ;receiving hash of input
     mov bx, ax
 
-;    mov di, offset psswrd
-;    mov cl, 15d                     ;//FIXME
-;    call HashFunc                   ;receiving hash of psswrd
+    jmp main
 
-    xor ax, ax
-    mov al, psswrd_code
+RESPOND:
+    incorrect_psswrd db "Go Home, Walter (access denied)$"
+    correct_psswrd   db "You're goddamn right (access granted)$"
+    extra_phrase     db "Say my name: $"
 
+BUF_SET_UP:
+    max_len     db MAX_BUF_LEN
+    strlen      db 0h
+    buffer      db 010h dup( )
+
+MY_PSSWRD:
+    psswrd_code      dw 0Bh          ;GiovanniGiorgio
+
+main:
+    mov ax, psswrd_code
+
+    xor ah, ah
     cmp ax, bx
     je has_guessed
 
