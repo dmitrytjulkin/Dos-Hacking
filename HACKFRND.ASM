@@ -4,18 +4,19 @@ org 100h
 
 ;// TODO check the carry flag if the prog hasnt opened
 
+BUF_LEN         equ 14h
+
 start:
 .data
     eg_solution     db "0000000000000000<", 0Dh, "$"
-    eg_ans          db "Heisenburger        $"
+    eg_ans          db "Heisenburger        "
 
 hack_sequence_phrase:
-    rand_ans        db BUF_LEN dup(?), "$"
-    necces_to_print db "you god dame right$", "get out!!$ "
-    hack_phrase     dw 0EB28h
+    rand_ans        db BUF_LEN dup("1")
+    necces_to_print db "you god dame right$", "get out!!$  "
+    hack_phrase     dw 0EB28h       ;EB = jmp, 28h - rel address
     end_of_seq      db 0Dh
     SEQ_LEN         equ $ - hack_sequence_phrase
-    BUF_LEN         equ 14h
 
 .code
     mov si, offset eg_ans
